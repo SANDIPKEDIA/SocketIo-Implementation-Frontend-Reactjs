@@ -20,7 +20,7 @@ const SOCKET_URL = 'https://pipaan.com360degree.com/';
 
 const USER = {
   id: 197,
-  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjE5NywiaWF0IjoxNzQ2MzYyMjI1LCJleHAiOjE3NTE1NDYyMjUsInR5cGUiOiJyZWZyZXNoIn0.Bn9l9PhIqVhxARGEOFKuVWgIi_ieVxIwJu-Pxgn6su4',
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjE5NywiaWF0IjoxNzQ2MzU4MzU2LCJleHAiOjE3NTE1NDIzNTYsInR5cGUiOiJyZWZyZXNoIn0.balsgBuA-1dotW-i-aOSgNuAHcul6JTyRqcJXnvsckQ',
   name: 'User 197'
 };
 
