@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import axios from 'axios';
 import {
@@ -8,23 +8,39 @@ import {
   Button,
   Box,
   Typography,
+  Avatar,
+  CircularProgress,
+  useTheme,
 } from '@mui/material';
+import SendIcon from '@mui/icons-material/Send';
+import { format } from 'date-fns';
 
 const API_URL = 'https://pipaan.com360degree.com/api/group_chat/add-group_chat';
 const SOCKET_URL = 'https://pipaan.com360degree.com/';
 
 const USER = {
-  id: 199,
-  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjE5OSwiaWF0IjoxNzQ2MzYyMjI1LCJleHAiOjE3NTE1NDYyMjUsInR5cGUiOiJyZWZyZXNoIn0.Bn9l9PhIqVhxARGEOFKuVWgIi_ieVxIwJu-Pxgn6su4',
-  name: 'User 199'
+  id: 197,
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjE5NywiaWF0IjoxNzQ2MzYyMjI1LCJleHAiOjE3NTE1NDYyMjUsInR5cGUiOiJyZWZyZXNoIn0.Bn9l9PhIqVhxARGEOFKuVWgIi_ieVxIwJu-Pxgn6su4',
+  name: 'User 197'
 };
 
 function App() {
+  const theme = useTheme();
   const [socket, setSocket] = useState(null);
   const [messages, setMessages] = useState([]);
   const [sentMessages, setSentMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [connected, setConnected] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, sentMessages]);
 
   useEffect(() => {
     const newSocket = io(SOCKET_URL, {
@@ -36,8 +52,6 @@ function App() {
     newSocket.on('connect', () => {
       setConnected(true);
       console.log('Connected to WebSocket with ID:', newSocket.id);
-      
-      // Join user's room
       newSocket.emit('join', USER.id);
     });
 
@@ -50,7 +64,6 @@ function App() {
       console.log('Disconnected from WebSocket');
     });
 
-    // Listen for messages
     newSocket.on('receive-message', (msg) => {
       console.log('Received message:', msg);
       setMessages(prev => [...prev, {
@@ -59,12 +72,10 @@ function App() {
       }]);
     });
 
-    // Add error handler
     newSocket.on('error', (error) => {
       console.error('Socket error:', error);
     });
 
-    // Add connect_error handler
     newSocket.on('connect_error', (error) => {
       console.error('Connection error:', error);
     });
@@ -82,13 +93,12 @@ function App() {
 
     const payload = {
       message: message,
-      reciever_id: 197, // Sending to self
+      reciever_id: 199,
       media_url: [],
       is_group_chat: false,
     };
 
     try {
-      // Send message through API
       const response = await axios.post(API_URL, payload, {
         headers: {
           'Token': USER.token,
@@ -97,7 +107,6 @@ function App() {
       });
 
       if (response.status === 200) {
-        // Add message to sent messages
         setSentMessages(prev => [...prev, {
           message: message,
           sender_id: USER.id,
@@ -110,105 +119,175 @@ function App() {
     }
   };
 
-  return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Typography variant="h4" gutterBottom align="center" sx={{ mb: 4 }}>
-        Chat Test - Single User
-      </Typography>
-      
-      <Paper elevation={3} sx={{ p: 3, height: '80vh', display: 'flex', flexDirection: 'column' }}>
-        <Typography variant="h5" gutterBottom>
-          {USER.name}
-        </Typography>
-        
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" color={connected ? 'success.main' : 'error.main'}>
-            Status: {connected ? 'Connected' : 'Disconnected'}
-          </Typography>
-        </Box>
+  const formatMessageTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return format(date, 'MMM d, h:mm a');
+  };
 
-        <Paper 
-          elevation={1} 
+  const allMessages = [...messages, ...sentMessages].sort((a, b) => 
+    new Date(a.timestamp) - new Date(b.timestamp)
+  );
+
+  return (
+    <Container maxWidth="md" sx={{ py: 4, height: '100vh' }}>
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          background: 'linear-gradient(145deg, #ffffff 0%, #f5f7fa 100%)',
+          borderRadius: '16px',
+          overflow: 'hidden'
+        }}
+      >
+        <Box 
           sx={{ 
-            flex: 1,
-            mb: 2, 
             p: 2, 
-            overflow: 'auto',
-            backgroundColor: '#f5f5f5'
+            backgroundColor: theme.palette.primary.main,
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
           }}
         >
-          {messages.map((msg, index) => (
-            <Box
-              key={`received-${index}`}
-              sx={{
-                textAlign: 'left',
-                mb: 1
-              }}
-            >
-              <Typography
-                sx={{
-                  display: 'inline-block',
-                  backgroundColor: '#f5f5f5',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  maxWidth: '70%'
-                }}
-              >
-                <Typography variant="subtitle2" color="textSecondary">
-                  {`User ${msg.sender_id}`}
-                </Typography>
-                <Typography>{msg.message}</Typography>
-                <Typography variant="caption" color="textSecondary">
-                  {new Date(msg.timestamp).toLocaleTimeString()}
-                </Typography>
-              </Typography>
-            </Box>
-          ))}
-          {sentMessages.map((msg, index) => (
-            <Box
-              key={`sent-${index}`}
-              sx={{
-                textAlign: 'right',
-                mb: 1
-              }}
-            >
-              <Typography
-                sx={{
-                  display: 'inline-block',
-                  backgroundColor: '#e3f2fd',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  maxWidth: '70%'
-                }}
-              >
-                <Typography variant="subtitle2" color="textSecondary">
-                  You
-                </Typography>
-                <Typography>{msg.message}</Typography>
-                <Typography variant="caption" color="textSecondary">
-                  {new Date(msg.timestamp).toLocaleTimeString()}
-                </Typography>
-              </Typography>
-            </Box>
-          ))}
-        </Paper>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar sx={{ bgcolor: theme.palette.secondary.main }}>
+              {USER.name[0]}
+            </Avatar>
+            <Typography variant="h6">{USER.name}</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CircularProgress 
+              size={12} 
+              sx={{ 
+                color: connected ? 'success.main' : 'error.main',
+                mr: 1
+              }} 
+            />
+            <Typography variant="body2" style={{fontWeight: 'bold'}} color={connected ? "#00FF00" : "#FF0000"}>
+              {connected ? 'Online' : 'Offline'}
+            </Typography>
+        
+          </Box>
+        </Box>
 
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Type your message..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-          />
-          <Button 
-            variant="contained" 
-            onClick={sendMessage}
-            disabled={!connected}
-          >
-            Send
-          </Button>
+        <Box 
+          sx={{ 
+            flex: 1,
+            p: 2,
+            overflow: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            backgroundColor: '#f8f9fa'
+          }}
+        >
+          {allMessages.map((msg, index) => (
+            <Box
+              key={`msg-${index}`}
+              sx={{
+                display: 'flex',
+                justifyContent: msg.sender_id === USER.id ? 'flex-end' : 'flex-start',
+                mb: 1
+              }}
+            >
+              <Box
+                sx={{
+                  maxWidth: '70%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 0.5
+                }}
+              >
+                <Box
+                  sx={{
+                    backgroundColor: msg.sender_id === USER.id 
+                      ? theme.palette.primary.main 
+                      : 'white',
+                    color: msg.sender_id === USER.id ? 'white' : 'text.primary',
+                    p: 2,
+                    borderRadius: '16px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    position: 'relative',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      bottom: 0,
+                      [msg.sender_id === USER.id ? 'right' : 'left']: -8,
+                      width: 16,
+                      height: 16,
+                      backgroundColor: msg.sender_id === USER.id 
+                        ? theme.palette.primary.main 
+                        : 'white',
+                      transform: 'rotate(45deg)',
+                      zIndex: 0
+                    }
+                  }}
+                >
+                  <Typography variant="body1">{msg.message}</Typography>
+                </Box>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: 'text.secondary',
+                    alignSelf: msg.sender_id === USER.id ? 'flex-end' : 'flex-start',
+                    px: 1
+                  }}
+                >
+                  {formatMessageTime(msg.timestamp)}
+                </Typography>
+              </Box>
+            </Box>
+          ))}
+          {isTyping && (
+            <Box sx={{ display: 'flex', gap: 0.5, p: 1 }}>
+              <CircularProgress size={12} />
+              <Typography variant="caption" color="text.secondary">
+                Someone is typing...
+              </Typography>
+            </Box>
+          )}
+          <div ref={messagesEndRef} />
+        </Box>
+
+        <Box 
+          sx={{ 
+            p: 2,
+            backgroundColor: 'white',
+            borderTop: '1px solid',
+            borderColor: 'divider'
+          }}
+        >
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Type your message..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '24px',
+                  backgroundColor: '#f8f9fa'
+                }
+              }}
+            />
+            <Button 
+              variant="contained" 
+              onClick={sendMessage}
+              disabled={!connected || !message.trim()}
+              sx={{
+                borderRadius: '50%',
+                minWidth: '48px',
+                width: '48px',
+                height: '48px'
+              }}
+            >
+              <SendIcon />
+            </Button>
+          </Box>
         </Box>
       </Paper>
     </Container>
