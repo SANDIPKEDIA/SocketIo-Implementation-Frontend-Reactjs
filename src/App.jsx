@@ -15,13 +15,13 @@ import {
 import SendIcon from '@mui/icons-material/Send';
 import { format } from 'date-fns';
 
-const API_URL = 'https://pipaan.com360degree.com/api/group_chat/add-group_chat';
-const SOCKET_URL = 'https://pipaan.com360degree.com/';
+const API_URL = 'https://staging-api.pipaan.com/api/group_chat/add-group_chat';
+const SOCKET_URL = 'https://staging-api.pipaan.com/';
 
 const USER = {
-  id: 197,
-  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjE5NywiaWF0IjoxNzQ2MzU4MzU2LCJleHAiOjE3NTE1NDIzNTYsInR5cGUiOiJyZWZyZXNoIn0.balsgBuA-1dotW-i-aOSgNuAHcul6JTyRqcJXnvsckQ',
-  name: 'User 197'
+  id: 17,
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjE3LCJpYXQiOjE3NDgyMzk2NzksImV4cCI6MTc1MzQyMzY3OSwidHlwZSI6InJlZnJlc2gifQ.9Lvk8wQTmL-Ms1lPro1UIio7RC-Fr8iBtOSW5dGLlWY',
+  name: 'User 17'
 };
 
 function App() {
@@ -93,7 +93,7 @@ function App() {
 
     const payload = {
       message: message,
-      reciever_id: 199,
+      reciever_id: 14,
       media_url: [],
       is_group_chat: false,
     };
